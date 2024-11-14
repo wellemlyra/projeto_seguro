@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  postgres-db:
+    image: postgres:13
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: cadastrodb
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  cadastro-app:
+    build:
+      context: ./cadastro
+      dockerfile: Dockerfile
+    container_name: cadastro-app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/cadastrodb
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres-db
+    networks:
+      - app-network
+
+  seguro-app:
+    build:
+      context: ./seguro
+      dockerfile: Dockerfile
+    container_name: seguro-app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/cadastrodb
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin
+      CADASTRO_API_URL: http://cadastro-app:8080/api/clientes
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres-db
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  pgdata:
